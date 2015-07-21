@@ -1,0 +1,18 @@
+﻿@model timw255.Sitefinity.TwoFactorAuthentication.MVC.Models.AuthenticateModel
+ 
+@{
+    Layout = "_Layout.cshtml";
+}
+@using (Html.BeginForm())
+{
+    @Html.ValidationSummary(true, "Login failed. Check your login details.");
+    <div>
+        <fieldset>
+            <legend>Verify</legend>
+            <div class="editor-label">
+                <input type="text" id="token" name="token" />
+            </div>
+            <input type="submit" value="Verify" />
+        </fieldset>
+    </div>
+}

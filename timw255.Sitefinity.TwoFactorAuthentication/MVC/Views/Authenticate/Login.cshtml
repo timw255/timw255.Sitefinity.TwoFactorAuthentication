@@ -1,0 +1,25 @@
+﻿@model timw255.Sitefinity.TwoFactorAuthentication.MVC.Models.AuthenticateModel
+ 
+@{
+    Layout = "_Layout.cshtml";
+}
+@using (Html.BeginForm())
+{
+    @Html.ValidationSummary(true, "Login failed. Check your login details.");
+    <div>
+        <fieldset>
+            <legend>Login</legend>
+            <div class="editor-label">
+                <input type="text" id="wrap_name" name="wrap_name" />
+            </div>
+            <div class="editor-field">
+                <input type="text" id="wrap_password" name="wrap_password" />
+            </div>
+            <div class="editor-label">
+                <input type="checkbox" id="sf_persistent" name="sf_persistent" />
+            </div>
+            <input type="hidden" id="is_form" name="is_form" value="true" />
+            <input type="submit" value="Log In" />
+        </fieldset>
+    </div>
+}

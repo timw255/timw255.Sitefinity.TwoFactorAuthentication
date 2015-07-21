@@ -1,0 +1,206 @@
+﻿using Microsoft.IdentityModel.Claims;
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Configuration;
+using System.Globalization;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Security.Principal;
+using System.Text;
+using System.Web;
+using Telerik.Sitefinity.Security.Claims;
+using Telerik.Sitefinity.Security.Claims.SWT;
+
+namespace timw255.Sitefinity.TwoFactorAuthentication
+{
+    public class TokenBuilder
+    {
+        public bool IsReusable
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public Uri ProcessRequest(string issuer, string realm, string redirect_uri, string deflate, string wrap_name, string sf_persistent)
+        {
+            //var values = context.Request.QueryString;
+            var _realm = realm;
+            var reply = redirect_uri;
+            var _deflate = "true".Equals(deflate, StringComparison.OrdinalIgnoreCase);
+
+            var _issuer = issuer;
+            var idx = _issuer.IndexOf("?");
+            if (idx != -1)
+                _issuer = _issuer.Substring(0, idx);
+
+            var claims = new List<Claim>() {
+                new Claim(ClaimTypes.Name, wrap_name)
+            };
+
+            var token = this.CreateToken(claims, _issuer, _realm);
+            NameValueCollection queryString;
+            if (!String.IsNullOrEmpty(reply))
+            {
+                string path;
+                idx = reply.IndexOf('?');
+                if (idx != -1)
+                {
+                    path = reply.Substring(0, idx);
+                    queryString = HttpUtility.ParseQueryString(reply.Substring(idx + 1));
+                }
+                else
+                {
+                    path = reply;
+                    queryString = new NameValueCollection();
+                }
+                this.WrapSWT(queryString, token, _deflate);
+                path = String.Concat(path, ToQueryString(queryString));
+                var uri = new Uri(new Uri(_realm), path);
+                //HttpContext.Current.Response.Redirect(uri.AbsoluteUri, false);
+                //return;
+
+                return uri;
+            }
+
+            //queryString = new NameValueCollection();
+            //this.WrapSWT(queryString, token, _deflate);
+
+            //HttpContext.Current.Response.Clear();
+            //HttpContext.Current.Response.StatusCode = 200;
+            //HttpContext.Current.Response.ContentType = "application/x-www-form-urlencoded";
+            //HttpContext.Current.Response.Write(ToQueryString(queryString, false));
+
+            return null;
+        }
+
+        private SimpleWebToken CreateToken(List<Claim> claims, string issuerName, string appliesTo)
+        {
+            appliesTo = appliesTo.ToLower();
+
+            var sKey = ConfigurationManager.AppSettings[appliesTo];
+            if (String.IsNullOrEmpty(sKey))
+            {
+                //check if appliesTo failed to find the key because it's missing a trailing slash, 
+                //or because it has a trailing slash which shouldn't be there
+                //and act accordingly (and try again):
+                if (!appliesTo.EndsWith("/"))
+                    appliesTo += "/";
+                else
+                    appliesTo = VirtualPathUtility.RemoveTrailingSlash(appliesTo);
+
+                sKey = "04CBC77505C0155D7E11D9BFAEA398CD7BA3A493D0DCF91AA4878F13E4C07AC0";//ConfigurationManager.AppSettings[appliesTo];
+                if (String.IsNullOrEmpty(sKey))
+                    throw new ConfigurationErrorsException(String.Format("Missing symmetric key for \"{0}\".", appliesTo));
+            }
+            var key = this.HexToByte(sKey);
+
+            var sb = new StringBuilder();
+            foreach (var c in claims)
+                sb.AppendFormat("{0}={1}&", HttpUtility.UrlEncode(c.ClaimType), HttpUtility.UrlEncode(c.Value));
+
+            sb.AppendFormat("{0}={1}&", SitefinityClaimTypes.StsType, "wa");
+
+            //double lifeTimeInSeconds = 3600;
+            var loginDateClaim = claims.FirstOrDefault(x => x.ClaimType == SitefinityClaimTypes.LastLoginDate);
+            DateTime issueDate = DateTime.UtcNow;
+            if (loginDateClaim != null)
+            {
+                if (!DateTime.TryParseExact(loginDateClaim.Value, "u", null, DateTimeStyles.None, out issueDate))
+                {
+                    issueDate = DateTime.UtcNow;
+                }
+            }
+
+            sb
+                .AppendFormat("TokenId={0}&", HttpUtility.UrlEncode(Guid.NewGuid().ToString()))
+                .AppendFormat("Issuer={0}&", HttpUtility.UrlEncode(issuerName))
+                .AppendFormat("Audience={0}&", HttpUtility.UrlEncode(appliesTo))
+                .AppendFormat("ExpiresOn={0:0}", (issueDate - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds + 3600);
+            //.AppendFormat("IssueDate={0:0}", (issueDate - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
+
+            var unsignedToken = sb.ToString();
+
+            var hmac = new HMACSHA256(key);
+            var sig = hmac.ComputeHash(Encoding.ASCII.GetBytes(unsignedToken));
+
+            string signedToken = String.Format("{0}&HMACSHA256={1}",
+                unsignedToken,
+                HttpUtility.UrlEncode(Convert.ToBase64String(sig)));
+
+            return new SimpleWebToken(signedToken);
+        }
+
+        private void WrapSWT(NameValueCollection collection, SimpleWebToken token, bool deflate)
+        {
+            var rawToken = token.RawToken;
+            if (deflate)
+            {
+                var zipped = this.ZipStr(rawToken);
+                rawToken = Convert.ToBase64String(zipped);
+                collection["wrap_deflated"] = "true";
+            }
+            collection["wrap_access_token"] = HttpUtility.UrlEncode(rawToken);
+            var seconds = Convert.ToInt32((token.ValidTo - token.ValidFrom).TotalSeconds);
+            collection["wrap_access_token_expires_in"] = seconds.ToString();
+        }
+
+        private byte[] ZipStr(String str)
+        {
+            using (MemoryStream output = new MemoryStream())
+            {
+                using (DeflateStream gzip = new DeflateStream(output, CompressionMode.Compress))
+                {
+                    using (StreamWriter writer = new StreamWriter(gzip, System.Text.Encoding.UTF8))
+                    {
+                        writer.Write(str);
+                    }
+                }
+
+                return output.ToArray();
+            }
+        }
+
+        private byte[] HexToByte(string hexString)
+        {
+            byte[] returnBytes = new byte[hexString.Length / 2];
+            for (int i = 0; i < returnBytes.Length; i++)
+                returnBytes[i] = Convert.ToByte(hexString.Substring(i * 2, 2), 16);
+            return returnBytes;
+        }
+
+        public static string ToQueryString(NameValueCollection collection, bool startWithQuestionMark = true)
+        {
+            if (collection == null || !collection.HasKeys())
+                return String.Empty;
+
+            var sb = new StringBuilder();
+            if (startWithQuestionMark)
+                sb.Append("?");
+
+            var j = 0;
+            var keys = collection.Keys;
+            foreach (string key in keys)
+            {
+                var i = 0;
+                var values = collection.GetValues(key);
+                foreach (var value in values)
+                {
+                    sb.Append(key)
+                        .Append("=")
+                        .Append(value);
+
+                    if (++i < values.Length)
+                        sb.Append("&");
+                }
+                if (++j < keys.Count)
+                    sb.Append("&");
+            }
+            return sb.ToString();
+        }
+    }
+}
