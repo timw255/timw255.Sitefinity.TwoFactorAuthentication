@@ -13,8 +13,8 @@
         {
             if (Model.ProvidersList.Count() > 1)
             {
-                <p id="ProvidersPanel">
-                    @Html.DropDownList("ProvidersList", Model.ProvidersList, new { onchange = "providersListChange()" })
+                <p>
+                    @Html.DropDownList("ProvidersList", Model.ProvidersList)
                     <input id="sf_domain" name="sf_domain" type="hidden" />
                 </p>
             }
@@ -31,9 +31,5 @@
             <input type="hidden" id="isFormRequest" name="is_form" value="true" />
             <p class="submit"><input type="submit" name="commit" value="Login"></p>
         }
-    </div>
-
-    <div class="login-help">
-        <p>Forgot your password? <a href="#">Click here to reset it</a>.</p>
     </div>
 </div>
