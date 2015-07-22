@@ -196,7 +196,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\TwoFactorAuthenticationConfig.cs" />
-    <Compile Include="MVC\Models\AuthenticateModel.cs" />
+    <Compile Include="MVC\Models\LoginModel.cs" />
     <Compile Include="TokenBuilder.cs" />
     <Compile Include="TwoFactorAuthenticationModule.cs" />
     <Compile Include="TwoFactorAuthenticationInstaller.cs" />
@@ -214,20 +214,19 @@
     <EmbeddedResource Include="MVC\Views\Authenticate\_Layout.cshtml" />
     <None Include="OpenAccessNuGet.targets" />
     <None Include="packages.config" />
+    <None Include="MVC\Views\web.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Web\UI\Login.html" />
     <Content Include="Widgets\Page\TwoFactorLogin\TwoFactorLoginWidget.ascx">
       <SubType>ASPXCodeBehind</SubType>
     </Content>
     <EmbeddedResource Include="Widgets\Page\TwoFactorLogin\TwoFactorLoginWidget.js" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="BasicSettings\" />
-    <Folder Include="FieldControls\" />
     <Folder Include="MVC\Views\Shared\" />
     <Folder Include="Web\Scripts\" />
     <Folder Include="Web\Services\" />
+    <Folder Include="Web\UI\" />
     <Folder Include="Widgets\Form\" />
     <Folder Include="Widgets\Layout\" />
   </ItemGroup>

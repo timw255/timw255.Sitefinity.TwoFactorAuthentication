@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Mvc;
 
 namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Models
 {
-    public class AuthenticateModel
+    public class LoginModel
     {
-        public string Message { get; set; }
+        public List<SelectListItem> ProvidersList { get; set; }
     }
 }

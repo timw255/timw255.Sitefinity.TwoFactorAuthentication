@@ -11,24 +11,17 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Web;
+using Telerik.Sitefinity.Configuration;
 using Telerik.Sitefinity.Security.Claims;
 using Telerik.Sitefinity.Security.Claims.SWT;
+using Telerik.Sitefinity.Security.Configuration;
 
 namespace timw255.Sitefinity.TwoFactorAuthentication
 {
     public class TokenBuilder
     {
-        public bool IsReusable
-        {
-            get
-            {
-                return true;
-            }
-        }
-
         public Uri ProcessRequest(string issuer, string realm, string redirect_uri, string deflate, string wrap_name, string sf_persistent)
         {
-            //var values = context.Request.QueryString;
             var _realm = realm;
             var reply = redirect_uri;
             var _deflate = "true".Equals(deflate, StringComparison.OrdinalIgnoreCase);
@@ -61,8 +54,6 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
                 this.WrapSWT(queryString, token, _deflate);
                 path = String.Concat(path, ToQueryString(queryString));
                 var uri = new Uri(new Uri(_realm), path);
-                //HttpContext.Current.Response.Redirect(uri.AbsoluteUri, false);
-                //return;
 
                 return uri;
             }
@@ -80,34 +71,22 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
 
         private SimpleWebToken CreateToken(List<Claim> claims, string issuerName, string appliesTo)
         {
-            appliesTo = appliesTo.ToLower();
+            var manager = ConfigManager.GetManager();
+            var config = manager.GetSection<SecurityConfig>();
 
-            var sKey = ConfigurationManager.AppSettings[appliesTo];
-            if (String.IsNullOrEmpty(sKey))
-            {
-                //check if appliesTo failed to find the key because it's missing a trailing slash, 
-                //or because it has a trailing slash which shouldn't be there
-                //and act accordingly (and try again):
-                if (!appliesTo.EndsWith("/"))
-                    appliesTo += "/";
-                else
-                    appliesTo = VirtualPathUtility.RemoveTrailingSlash(appliesTo);
+            var sKey = config.SecurityTokenIssuers.Values.Where(i => i.Realm.ToLower().EndsWith("/tfa/authenticate/verify")).SingleOrDefault().Key;
 
-                sKey = "04CBC77505C0155D7E11D9BFAEA398CD7BA3A493D0DCF91AA4878F13E4C07AC0";//ConfigurationManager.AppSettings[appliesTo];
-                if (String.IsNullOrEmpty(sKey))
-                    throw new ConfigurationErrorsException(String.Format("Missing symmetric key for \"{0}\".", appliesTo));
-            }
             var key = this.HexToByte(sKey);
-
             var sb = new StringBuilder();
+
             foreach (var c in claims)
+            {
                 sb.AppendFormat("{0}={1}&", HttpUtility.UrlEncode(c.ClaimType), HttpUtility.UrlEncode(c.Value));
+            }
 
-            sb.AppendFormat("{0}={1}&", SitefinityClaimTypes.StsType, "wa");
-
-            //double lifeTimeInSeconds = 3600;
             var loginDateClaim = claims.FirstOrDefault(x => x.ClaimType == SitefinityClaimTypes.LastLoginDate);
             DateTime issueDate = DateTime.UtcNow;
+
             if (loginDateClaim != null)
             {
                 if (!DateTime.TryParseExact(loginDateClaim.Value, "u", null, DateTimeStyles.None, out issueDate))
@@ -121,16 +100,14 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
                 .AppendFormat("Issuer={0}&", HttpUtility.UrlEncode(issuerName))
                 .AppendFormat("Audience={0}&", HttpUtility.UrlEncode(appliesTo))
                 .AppendFormat("ExpiresOn={0:0}", (issueDate - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds + 3600);
-            //.AppendFormat("IssueDate={0:0}", (issueDate - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
+                //.AppendFormat("IssueDate={0:0}", (issueDate - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
 
             var unsignedToken = sb.ToString();
 
             var hmac = new HMACSHA256(key);
             var sig = hmac.ComputeHash(Encoding.ASCII.GetBytes(unsignedToken));
 
-            string signedToken = String.Format("{0}&HMACSHA256={1}",
-                unsignedToken,
-                HttpUtility.UrlEncode(Convert.ToBase64String(sig)));
+            string signedToken = String.Format("{0}&HMACSHA256={1}", unsignedToken, HttpUtility.UrlEncode(Convert.ToBase64String(sig)));
 
             return new SimpleWebToken(signedToken);
         }
@@ -169,18 +146,24 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
         {
             byte[] returnBytes = new byte[hexString.Length / 2];
             for (int i = 0; i < returnBytes.Length; i++)
+            {
                 returnBytes[i] = Convert.ToByte(hexString.Substring(i * 2, 2), 16);
+            }
             return returnBytes;
         }
 
         public static string ToQueryString(NameValueCollection collection, bool startWithQuestionMark = true)
         {
             if (collection == null || !collection.HasKeys())
+            {
                 return String.Empty;
+            }
 
             var sb = new StringBuilder();
             if (startWithQuestionMark)
+            {
                 sb.Append("?");
+            }
 
             var j = 0;
             var keys = collection.Keys;
@@ -195,10 +178,14 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
                         .Append(value);
 
                     if (++i < values.Length)
+                    {
                         sb.Append("&");
+                    }
                 }
                 if (++j < keys.Count)
+                {
                     sb.Append("&");
+                }
             }
             return sb.ToString();
         }

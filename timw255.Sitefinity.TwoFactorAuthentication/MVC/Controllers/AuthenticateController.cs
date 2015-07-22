@@ -14,6 +14,9 @@ using timw255.Sitefinity.TwoFactorAuthentication.MVC.Models;
 using Telerik.Sitefinity.Model;
 using timw255.Sitefinity.TwoFactorAuthentication.Configuration;
 using Telerik.Sitefinity.Configuration;
+using Telerik.Sitefinity.Abstractions;
+using Telerik.Sitefinity.Security.Data;
+using Telerik.Sitefinity.Data;
 
 namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
 {
@@ -32,7 +35,39 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
         {
             Session["tfa.authState"] = 0;
 
-            var model = new AuthenticateModel();
+            var model = new LoginModel();
+
+            model.ProvidersList = new List<SelectListItem>();
+
+            ProvidersCollection<MembershipDataProvider> providersCollection = ManagerBase<MembershipDataProvider>.ProvidersCollection ?? UserManager.GetManager().Providers;
+            if (providersCollection.Count > 1)
+            {
+                string defaultProviderName = ManagerBase<MembershipDataProvider>.GetDefaultProviderName();
+                
+                foreach (MembershipDataProvider membershipDataProvider in providersCollection)
+                {
+                    membershipDataProvider.SuppressSecurityChecks = true;
+                    try
+                    {
+                        SelectListItem listItem = new SelectListItem()
+                            {
+                                Text = membershipDataProvider.Title,
+                                Value = membershipDataProvider.Name
+                            };
+
+                        if (defaultProviderName == membershipDataProvider.Name)
+                        {
+                            listItem.Selected = true;
+                        }
+
+                        model.ProvidersList.Add(listItem);
+                    }
+                    finally
+                    {
+                        membershipDataProvider.SuppressSecurityChecks = false;
+                    }
+                }
+            }
 
             return View("Login", model);
         }
@@ -92,9 +127,7 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
                 return Redirect("/");
             }
 
-            var model = new AuthenticateModel();
-
-            return View("Verify", model);
+            return View("Verify");
         }
 
         [Route("Authenticate/Verify")]

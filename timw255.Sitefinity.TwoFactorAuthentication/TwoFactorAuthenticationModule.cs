@@ -73,6 +73,7 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
         /// <param name="initializer">The Site Initializer. A helper class for installing Sitefinity modules.</param>
         public override void Install(SiteInitializer initializer)
         {
+            this.InstallVirtualPaths(initializer);
             this.InstallPageWidgets(initializer);
         }
 
@@ -113,6 +114,17 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
         /// <param name="initializer">The initializer.</param>
         private void InstallVirtualPaths(SiteInitializer initializer)
         {
+            var virtualPaths = initializer.Context.GetConfig<VirtualPathSettingsConfig>().VirtualPaths;
+            var moduleVirtualPath = TwoFactorAuthenticationModule.ModuleVirtualPath + "*";
+            if (!virtualPaths.ContainsKey(moduleVirtualPath))
+            {
+                virtualPaths.Add(new VirtualPathElement(virtualPaths)
+                {
+                    VirtualPath = moduleVirtualPath,
+                    ResolverName = "EmbeddedResourceResolver",
+                    ResourceLocation = typeof(TwoFactorAuthenticationModule).Assembly.GetName().Name
+                });
+            }
         }
         #endregion
 
@@ -150,8 +162,8 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
         private void InstallPageWidgets(SiteInitializer initializer)
         {
             string modulePageWidgetSectionName = "TwoFactorAuthentication";
-            string modulePageWidgetSectionTitle = "TwoFactorAuthentication";
-            string modulePageWidgetSectionDescription = "TwoFactorAuthentication";
+            string modulePageWidgetSectionTitle = "Two Factor Authentication";
+            string modulePageWidgetSectionDescription = "Two Factor Authentication";
 
             initializer.Installer
                 .Toolbox(CommonToolbox.PageWidgets)
@@ -173,9 +185,9 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
         #endregion
 
         #region Private members & constants
-        public const string ModuleName = "TwoFactorAuthentication";
-        internal const string ModuleTitle = "TwoFactorAuthentication";
-        internal const string ModuleDescription = "This is a Custom Module which has been built with Sitefinity Thunder.";
+        public const string ModuleName = "Two Factor Authentication";
+        internal const string ModuleTitle = "Two Factor Authentication";
+        internal const string ModuleDescription = "This is a custom module that adds two-factor authentication to Telerik Sitefinity.";
         internal const string ModuleVirtualPath = "~/TwoFactorAuthentication/";
         #endregion
     }

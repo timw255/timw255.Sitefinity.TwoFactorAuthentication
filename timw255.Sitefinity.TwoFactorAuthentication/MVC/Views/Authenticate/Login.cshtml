@@ -1,25 +1,39 @@
-﻿@model timw255.Sitefinity.TwoFactorAuthentication.MVC.Models.AuthenticateModel
+﻿@model timw255.Sitefinity.TwoFactorAuthentication.MVC.Models.LoginModel
  
 @{
     Layout = "_Layout.cshtml";
 }
-@using (Html.BeginForm())
-{
-    @Html.ValidationSummary(true, "Login failed. Check your login details.");
-    <div>
-        <fieldset>
-            <legend>Login</legend>
-            <div class="editor-label">
-                <input type="text" id="wrap_name" name="wrap_name" />
-            </div>
-            <div class="editor-field">
-                <input type="text" id="wrap_password" name="wrap_password" />
-            </div>
-            <div class="editor-label">
-                <input type="checkbox" id="sf_persistent" name="sf_persistent" />
-            </div>
-            <input type="hidden" id="is_form" name="is_form" value="true" />
-            <input type="submit" value="Log In" />
-        </fieldset>
+
+@Html.ValidationSummary(true, "Login failed. Check your login details.")
+
+<div class="container">
+    <div class="login">
+        <h1>Login to manage the site</h1>
+        @using (Html.BeginForm())
+        {
+            if (Model.ProvidersList.Count() > 1)
+            {
+                <p id="ProvidersPanel">
+                    @Html.DropDownList("ProvidersList", Model.ProvidersList, new { onchange = "providersListChange()" })
+                    <input id="sf_domain" name="sf_domain" type="hidden" />
+                </p>
+            }
+            <p><input type="text" name="wrap_name" value="" placeholder="Username"></p>
+            <p><input type="password" name="wrap_password" value="" placeholder="Password"></p>
+            <p class="remember_me">
+                <label>
+                    <label>
+                        <input type="checkbox" name="sf_persistent" id="sf_persistent">
+                        Remember me on this computer
+                    </label>
+                </label>
+            </p>
+            <input type="hidden" id="isFormRequest" name="is_form" value="true" />
+            <p class="submit"><input type="submit" name="commit" value="Login"></p>
+        }
     </div>
-}
+
+    <div class="login-help">
+        <p>Forgot your password? <a href="#">Click here to reset it</a>.</p>
+    </div>
+</div>
