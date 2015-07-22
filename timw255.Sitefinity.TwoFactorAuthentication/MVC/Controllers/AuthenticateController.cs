@@ -99,19 +99,33 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
 
                     string authyId = profile.GetValue<string>("AuthyID");
 
+                    bool useTwoFactor = false;
+
                     if (!String.IsNullOrWhiteSpace(authyId))
                     {
+                        useTwoFactor = true;
+
                         Session["tfa.authyId"] = authyId;
                     }
-                }
 
-                if (is_form == "false")
-                {
-                    return new HttpStatusCodeResult(200);
-                }
-                else
-                {
-                    return Redirect("/TFA/Authenticate/Verify");
+                    if (is_form == "false")
+                    {
+                        if (useTwoFactor)
+                        {
+                            return Json(new { url = "/TFA/Authenticate/Verify" });
+                        }
+
+                        return Json(new { url = GetLoginUri() });
+                    }
+                    else
+                    {
+                        if (useTwoFactor)
+                        {
+                            return Redirect("/TFA/Authenticate/Verify");
+                        }
+
+                        return Redirect(GetLoginUri());
+                    }
                 }
             }
 
@@ -149,21 +163,26 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
 
             if (result.Success)
             {
-                Session["tfa.authState"] = 0;
-                string realm = Session["tfa.realm"].ToString();
-                string redirect_uri = Session["tfa.redirect_uri"].ToString();
-                string deflate = Session["tfa.deflate"].ToString();
-                string wrap_name = Session["tfa.wrap_name"].ToString();
-                string sf_persistent = Session["tfa.sf_persistent"].ToString();
-
-                Uri u = GetLoginUri(realm, redirect_uri, deflate, wrap_name, sf_persistent);
-
-                return Redirect(u.AbsoluteUri);
+                return Redirect(GetLoginUri(true));
             }
             else
             {
                 return Redirect("/TFA/Authenticate/Verify");
             }
+        }
+
+        private string GetLoginUri(bool isTwoFactor = false)
+        {
+            Session["tfa.authState"] = 0;
+            string realm = Session["tfa.realm"].ToString();
+            string redirect_uri = Session["tfa.redirect_uri"].ToString();
+            string deflate = Session["tfa.deflate"].ToString();
+            string wrap_name = Session["tfa.wrap_name"].ToString();
+            string sf_persistent = Session["tfa.sf_persistent"].ToString();
+
+            Uri u = GetTokenUri(realm, redirect_uri, deflate, wrap_name, sf_persistent, isTwoFactor);
+
+            return u.AbsoluteUri;
         }
 
         private bool IsAuthState(int value)
@@ -183,11 +202,11 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
             return false;
         }
 
-        private Uri GetLoginUri(string realm, string redirect_uri, string deflate, string wrap_name, string sf_persistent)
+        private Uri GetTokenUri(string realm, string redirect_uri, string deflate, string wrap_name, string sf_persistent, bool isTwoFactor)
         {
             string issuer = Request.Url.AbsoluteUri;
             var tokenBuilder = new TokenBuilder();
-            return tokenBuilder.ProcessRequest(issuer, realm, redirect_uri, deflate, wrap_name, sf_persistent);
+            return tokenBuilder.ProcessRequest(issuer, realm, redirect_uri, deflate, wrap_name, sf_persistent, isTwoFactor);
         }
     }
 }

@@ -20,7 +20,7 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
 {
     public class TokenBuilder
     {
-        public Uri ProcessRequest(string issuer, string realm, string redirect_uri, string deflate, string wrap_name, string sf_persistent)
+        public Uri ProcessRequest(string issuer, string realm, string redirect_uri, string deflate, string wrap_name, string sf_persistent, bool isTwoFactor)
         {
             var _realm = realm;
             var reply = redirect_uri;
@@ -35,7 +35,14 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
                 new Claim(ClaimTypes.Name, wrap_name)
             };
 
-            var token = this.CreateToken(claims, _issuer, _realm);
+            string rEnding = "/tfa/authenticate/swt";
+
+            if (isTwoFactor)
+            {
+                rEnding = "/tfa/authenticate/verify";
+            }
+
+            var token = this.CreateToken(claims, _issuer, _realm, rEnding);
             NameValueCollection queryString;
             if (!String.IsNullOrEmpty(reply))
             {
@@ -69,12 +76,12 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
             return null;
         }
 
-        private SimpleWebToken CreateToken(List<Claim> claims, string issuerName, string appliesTo)
+        private SimpleWebToken CreateToken(List<Claim> claims, string issuerName, string appliesTo, string rEnding)
         {
             var manager = ConfigManager.GetManager();
             var config = manager.GetSection<SecurityConfig>();
 
-            var sKey = config.SecurityTokenIssuers.Values.Where(i => i.Realm.ToLower().EndsWith("/tfa/authenticate/verify")).SingleOrDefault().Key;
+            var sKey = config.SecurityTokenIssuers.Values.Where(i => i.Realm.ToLower().EndsWith(rEnding)).SingleOrDefault().Key;
 
             var key = this.HexToByte(sKey);
             var sb = new StringBuilder();
@@ -100,7 +107,6 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
                 .AppendFormat("Issuer={0}&", HttpUtility.UrlEncode(issuerName))
                 .AppendFormat("Audience={0}&", HttpUtility.UrlEncode(appliesTo))
                 .AppendFormat("ExpiresOn={0:0}", (issueDate - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds + 3600);
-                //.AppendFormat("IssueDate={0:0}", (issueDate - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds);
 
             var unsignedToken = sb.ToString();
 

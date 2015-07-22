@@ -120,8 +120,8 @@ timw255.Sitefinity.TwoFactorAuthentication.Widgets.Page.TwoFactorLogin.TwoFactor
     },
 
     _authenticationSuccess: function (data, textStatus, jqXHR) {
-        var newUrl = '/TFA/Authenticate/Verify';
-        window.location = newUrl;
+        var url = data.url;
+        window.location = url;
     },
 
     _showErrorMessage: function (message) {
