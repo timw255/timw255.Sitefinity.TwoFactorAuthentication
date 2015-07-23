@@ -1,4 +1,6 @@
-﻿@{
+﻿@model timw255.Sitefinity.TwoFactorAuthentication.MVC.Models.LoginModel
+
+@{
     Layout = "_Layout.cshtml";
 }
 
@@ -7,7 +9,11 @@
         <h1>Two-factor Authentication</h1>
         @using (Html.BeginForm())
         {
-            <p><input type="text" name="token" value="" placeholder="Token" autofocus></p>
+            if (!Html.ViewData.ModelState.IsValid)
+            {
+                <p class="error">@Html.ValidationMessage("InvalidToken")</p>
+            }
+            <p><input type="password" name="token" value="" placeholder="Token" autofocus></p>
             <p class="submit"><input type="submit" name="commit" value="Verify"></p>
         }
     </div>

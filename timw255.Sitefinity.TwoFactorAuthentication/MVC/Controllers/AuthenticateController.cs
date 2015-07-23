@@ -149,7 +149,11 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
             }
             else
             {
-                return Redirect("/TFA/Authenticate/Verify");
+                var model = new LoginModel();
+
+                ModelState.AddModelError("InvalidToken", "Incorrect Token");
+
+                return View("Verify", model);
             }
         }
 
