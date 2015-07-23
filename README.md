@@ -5,6 +5,7 @@ This is a custom module that adds basic two-factor authentication to Telerik Sit
 ## Authy
 
 It relies on [Authy](https://www.authy.com/) to provide and validate the tokens. You must create an account and set up an Authy app to use this as is.
+
 Once that's done, grab the Api Key from your Authy dashboard and place it in the configuration at: Administration -> Settings -> Advanced -> TwoFactorAuthentication.
 
 ## Enabling Two-factor Authentication
