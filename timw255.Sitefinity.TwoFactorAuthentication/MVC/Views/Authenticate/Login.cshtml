@@ -4,13 +4,15 @@
     Layout = "_Layout.cshtml";
 }
 
-@Html.ValidationSummary(true, "Login failed. Check your login details.")
-
 <div class="container">
     <div class="login">
         <h1>Login to manage the site</h1>
         @using (Html.BeginForm())
         {
+            if (!Html.ViewData.ModelState.IsValid)
+            {
+                <p class="error">@Html.ValidationMessage("InvalidCredentials")</p>
+            }
             if (Model.ProvidersList.Count() > 1)
             {
                 <p>

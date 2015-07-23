@@ -37,37 +37,7 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
 
             var model = new LoginModel();
 
-            model.ProvidersList = new List<SelectListItem>();
-
-            ProvidersCollection<MembershipDataProvider> providersCollection = ManagerBase<MembershipDataProvider>.ProvidersCollection ?? UserManager.GetManager().Providers;
-            if (providersCollection.Count > 1)
-            {
-                string defaultProviderName = ManagerBase<MembershipDataProvider>.GetDefaultProviderName();
-                
-                foreach (MembershipDataProvider membershipDataProvider in providersCollection)
-                {
-                    membershipDataProvider.SuppressSecurityChecks = true;
-                    try
-                    {
-                        SelectListItem listItem = new SelectListItem()
-                            {
-                                Text = membershipDataProvider.Title,
-                                Value = membershipDataProvider.Name
-                            };
-
-                        if (defaultProviderName == membershipDataProvider.Name)
-                        {
-                            listItem.Selected = true;
-                        }
-
-                        model.ProvidersList.Add(listItem);
-                    }
-                    finally
-                    {
-                        membershipDataProvider.SuppressSecurityChecks = false;
-                    }
-                }
-            }
+            model.ProvidersList = GetProvidersList();
 
             return View("Login", model);
         }
@@ -76,6 +46,7 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
         [HttpPost]
         public ActionResult SWT(string realm, string redirect_uri, string deflate, string wrap_name, string wrap_password, string sf_domain = "Default", string sf_persistent = "false", string is_form = "false")
         {
+            var model = new LoginModel();
             UserManager um = new UserManager(sf_domain);
             if (um.ValidateUser(wrap_name, wrap_password))
             {
@@ -129,7 +100,11 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
                 }
             }
 
-            return Redirect("/");
+            model.ProvidersList = GetProvidersList();
+
+            ModelState.AddModelError("InvalidCredentials", "Incorrect Username/Password Combination");
+
+            return View("Login", model);
         }
 
         [Route("Authenticate/Verify")]
@@ -163,12 +138,56 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
 
             if (result.Success)
             {
+                var loggedInUsers = SecurityManager.GetLoggedInBackendUsers();
+
+                if (loggedInUsers.Where(u => u.UserName == Session["tfa.wrap_name"].ToString()).Count() > 0)
+                {
+
+                }
+
                 return Redirect(GetLoginUri());
             }
             else
             {
                 return Redirect("/TFA/Authenticate/Verify");
             }
+        }
+
+        private List<SelectListItem> GetProvidersList()
+        {
+            var providersList = new List<SelectListItem>();
+
+            ProvidersCollection<MembershipDataProvider> providersCollection = ManagerBase<MembershipDataProvider>.ProvidersCollection ?? UserManager.GetManager().Providers;
+            if (providersCollection.Count > 1)
+            {
+                string defaultProviderName = ManagerBase<MembershipDataProvider>.GetDefaultProviderName();
+                
+                foreach (MembershipDataProvider membershipDataProvider in providersCollection)
+                {
+                    membershipDataProvider.SuppressSecurityChecks = true;
+                    try
+                    {
+                        SelectListItem listItem = new SelectListItem()
+                            {
+                                Text = membershipDataProvider.Title,
+                                Value = membershipDataProvider.Name
+                            };
+
+                        if (defaultProviderName == membershipDataProvider.Name)
+                        {
+                            listItem.Selected = true;
+                        }
+
+                        providersList.Add(listItem);
+                    }
+                    finally
+                    {
+                        membershipDataProvider.SuppressSecurityChecks = false;
+                    }
+                }
+            }
+
+            return providersList;
         }
 
         private string GetLoginUri()
