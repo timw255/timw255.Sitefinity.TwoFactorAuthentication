@@ -95,7 +95,8 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
 
                 if (user != null)
                 {
-                    profile = profileManager.GetUserProfile(user, "Telerik.Sitefinity.Security.Model.authyprofile");
+                    //profile = profileManager.GetUserProfile(user, "Telerik.Sitefinity.Security.Model.authyprofile");
+                    profile = profileManager.GetUserProfile<SitefinityProfile>(user);
 
                     string authyId = profile.GetValue<string>("AuthyID");
 

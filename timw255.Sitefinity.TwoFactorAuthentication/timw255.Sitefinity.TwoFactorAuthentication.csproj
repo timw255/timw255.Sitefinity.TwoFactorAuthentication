@@ -198,7 +198,6 @@
   <ItemGroup>
     <Compile Include="Configuration\TwoFactorAuthenticationConfig.cs" />
     <Compile Include="MVC\Models\LoginModel.cs" />
-    <Compile Include="Security\AuthyProfile.cs" />
     <Compile Include="TokenBuilder.cs" />
     <Compile Include="TwoFactorAuthenticationModule.cs" />
     <Compile Include="TwoFactorAuthenticationInstaller.cs" />
