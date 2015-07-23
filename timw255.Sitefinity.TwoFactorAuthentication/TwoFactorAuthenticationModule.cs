@@ -242,7 +242,7 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
                 }
                 string name = profileTypeData.Name;
                 MetaType fullName = metadataManager.CreateMetaType(typeof(AuthyProfile).Namespace, profileTypeData.Name);
-                fullName.BaseClassName = typeof(SitefinityProfile).FullName;
+                fullName.BaseClassName = typeof(UserProfile).FullName;
                 fullName.IsDynamic = true;
                 fullName.DatabaseInheritance = DatabaseInheritanceType.vertical;
                 MetaTypeDescription metaTypeDescription = metadataManager.CreateMetaTypeDescription(fullName.Id);
@@ -267,9 +267,8 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
 
                 contentViewControls.Add(contentViewControlElement);
                 manager.SaveSection(contentViewConfig);
-                UserProfileManager.GetManager().GetUserProfiles().Count<UserProfile>();
 
-                SystemManager.RestartApplication(true);
+                SystemManager.RestartApplication(OperationReason.KnownKeys.StaticModulesUpdate);
             }
         }
 
@@ -311,7 +310,7 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
                 manager.SaveSection(section);
                 manager.SaveSection(contentViewConfig);
 
-                SystemManager.RestartApplication(true);
+                SystemManager.RestartApplication(OperationReason.KnownKeys.StaticModulesUpdate);
             }
         }
 
