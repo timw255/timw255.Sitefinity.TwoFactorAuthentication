@@ -71,6 +71,30 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
                 return this["TwoFactorAuthenticationResourcesDescription"];
             }
         }
+
+        /// <summary>
+        /// Title for the Two Factor Login Widget.
+        /// </summary>
+        [ResourceEntry("TwoFactorLogin", Value = "Two Factor Login", Description = "Title for the Two Factor Login Widget.", LastModified = "2015/07/20")]
+        public string TwoFactorLogin
+        {
+            get
+            {
+                return base["TwoFactorLogin"];
+            }
+        }
+
+        /// <summary>
+        /// phrase: Authy Id
+        /// </summary>
+        [ResourceEntry("AuthyId", Value = "Authy Id", Description = "phrase: Authy Id", LastModified = "2015/07/20")]
+        public string AuthyId
+        {
+            get
+            {
+                return base["AuthyId"];
+            }
+        }
         #endregion
     }
 }

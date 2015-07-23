@@ -25,6 +25,7 @@ using Telerik.Sitefinity.Modules.UserProfiles.Configuration;
 using Telerik.Sitefinity.Modules.UserProfiles.Web.Services;
 using Telerik.Sitefinity.Modules.UserProfiles.Web.Services.Model;
 using Telerik.Sitefinity.Security;
+using Telerik.Sitefinity.Security.Configuration;
 using Telerik.Sitefinity.Security.Model;
 using Telerik.Sitefinity.Services;
 using Telerik.Sitefinity.Web.UI;
@@ -95,6 +96,8 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
             this.InstallVirtualPaths(initializer);
             this.InstallPageWidgets(initializer);
             this.InstallUserProfileTypes(initializer);
+
+            SystemManager.RestartApplication(OperationReason.KnownKeys.StaticModulesUpdate); 
         }
 
         /// <summary>

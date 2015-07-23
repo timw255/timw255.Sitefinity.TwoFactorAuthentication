@@ -20,68 +20,59 @@ namespace timw255.Sitefinity.TwoFactorAuthentication
 {
     public class TokenBuilder
     {
-        public Uri ProcessRequest(string issuer, string realm, string redirect_uri, string deflate, string wrap_name, string sf_persistent, bool isTwoFactor)
+        public Uri ProcessRequest(string realm, string redirect_uri, bool deflate, string wrap_name, string sf_persistent)
         {
-            var _realm = realm;
-            var reply = redirect_uri;
-            var _deflate = "true".Equals(deflate, StringComparison.OrdinalIgnoreCase);
-
-            var _issuer = issuer;
-            var idx = _issuer.IndexOf("?");
+            string issuer = "http://localhost";
+            var idx = issuer.IndexOf("?");
             if (idx != -1)
-                _issuer = _issuer.Substring(0, idx);
+            {
+                issuer = issuer.Substring(0, idx);
+            }
 
             var claims = new List<Claim>() {
                 new Claim(ClaimTypes.Name, wrap_name)
             };
 
-            string rEnding = "/tfa/authenticate/swt";
-
-            if (isTwoFactor)
-            {
-                rEnding = "/tfa/authenticate/verify";
-            }
-
-            var token = this.CreateToken(claims, _issuer, _realm, rEnding);
+            var token = this.CreateToken(claims, issuer, realm);
             NameValueCollection queryString;
-            if (!String.IsNullOrEmpty(reply))
+            if (!String.IsNullOrEmpty(redirect_uri))
             {
                 string path;
-                idx = reply.IndexOf('?');
+                idx = redirect_uri.IndexOf('?');
                 if (idx != -1)
                 {
-                    path = reply.Substring(0, idx);
-                    queryString = HttpUtility.ParseQueryString(reply.Substring(idx + 1));
+                    path = redirect_uri.Substring(0, idx);
+                    queryString = HttpUtility.ParseQueryString(redirect_uri.Substring(idx + 1));
                 }
                 else
                 {
-                    path = reply;
+                    path = redirect_uri;
                     queryString = new NameValueCollection();
                 }
-                this.WrapSWT(queryString, token, _deflate);
+                this.WrapSWT(queryString, token, deflate);
                 path = String.Concat(path, ToQueryString(queryString));
-                var uri = new Uri(new Uri(_realm), path);
+                var uri = new Uri(new Uri(realm), path);
 
                 return uri;
             }
 
-            //queryString = new NameValueCollection();
-            //this.WrapSWT(queryString, token, _deflate);
+            queryString = new NameValueCollection();
+            this.WrapSWT(queryString, token, deflate);
 
-            //HttpContext.Current.Response.Clear();
-            //HttpContext.Current.Response.StatusCode = 200;
-            //HttpContext.Current.Response.ContentType = "application/x-www-form-urlencoded";
-            //HttpContext.Current.Response.Write(ToQueryString(queryString, false));
+            HttpContext.Current.Response.Clear();
+            HttpContext.Current.Response.StatusCode = 200;
+            HttpContext.Current.Response.ContentType = "application/x-www-form-urlencoded";
+            HttpContext.Current.Response.Write(ToQueryString(queryString, false));
 
             return null;
         }
 
-        private SimpleWebToken CreateToken(List<Claim> claims, string issuerName, string appliesTo, string rEnding)
+        private SimpleWebToken CreateToken(List<Claim> claims, string issuerName, string appliesTo)
         {
             var manager = ConfigManager.GetManager();
             var config = manager.GetSection<SecurityConfig>();
 
-            var sKey = config.SecurityTokenIssuers.Values.Where(i => i.Realm.ToLower().EndsWith(rEnding)).SingleOrDefault().Key;
+            var sKey = config.SecurityTokenIssuers.Values.Where(i => i.Realm == issuerName).SingleOrDefault().Key;
 
             var key = this.HexToByte(sKey);
             var sb = new StringBuilder();

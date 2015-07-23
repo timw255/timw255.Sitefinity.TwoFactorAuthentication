@@ -24,9 +24,9 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
     public class AuthenticateController : Controller
     {
         [Route]
-        public string Index()
+        public ActionResult Index()
         {
-            return "Default action";
+            return Redirect("/");
         }
 
         [Route("Authenticate/SWT")]
@@ -95,10 +95,9 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
 
                 if (user != null)
                 {
-                    //profile = profileManager.GetUserProfile(user, "Telerik.Sitefinity.Security.Model.authyprofile");
                     profile = profileManager.GetUserProfile<SitefinityProfile>(user);
 
-                    string authyId = profile.GetValue<string>("AuthyID");
+                    string authyId = profile.GetValue<string>("AuthyId");
 
                     bool useTwoFactor = false;
 
@@ -164,7 +163,7 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
 
             if (result.Success)
             {
-                return Redirect(GetLoginUri(true));
+                return Redirect(GetLoginUri());
             }
             else
             {
@@ -172,16 +171,16 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
             }
         }
 
-        private string GetLoginUri(bool isTwoFactor = false)
+        private string GetLoginUri()
         {
             Session["tfa.authState"] = 0;
             string realm = Session["tfa.realm"].ToString();
             string redirect_uri = Session["tfa.redirect_uri"].ToString();
-            string deflate = Session["tfa.deflate"].ToString();
+            bool deflate = "true".Equals(Session["tfa.deflate"].ToString(), StringComparison.OrdinalIgnoreCase);
             string wrap_name = Session["tfa.wrap_name"].ToString();
             string sf_persistent = Session["tfa.sf_persistent"].ToString();
 
-            Uri u = GetTokenUri(realm, redirect_uri, deflate, wrap_name, sf_persistent, isTwoFactor);
+            Uri u = GetTokenUri(realm, redirect_uri, deflate, wrap_name, sf_persistent);
 
             return u.AbsoluteUri;
         }
@@ -203,11 +202,12 @@ namespace timw255.Sitefinity.TwoFactorAuthentication.MVC.Controllers
             return false;
         }
 
-        private Uri GetTokenUri(string realm, string redirect_uri, string deflate, string wrap_name, string sf_persistent, bool isTwoFactor)
+        private Uri GetTokenUri(string realm, string redirect_uri, bool deflate, string wrap_name, string sf_persistent)
         {
             string issuer = Request.Url.AbsoluteUri;
+            //string issuer = "http://localhost";
             var tokenBuilder = new TokenBuilder();
-            return tokenBuilder.ProcessRequest(issuer, realm, redirect_uri, deflate, wrap_name, sf_persistent, isTwoFactor);
+            return tokenBuilder.ProcessRequest(realm, redirect_uri, deflate, wrap_name, sf_persistent);
         }
     }
 }
