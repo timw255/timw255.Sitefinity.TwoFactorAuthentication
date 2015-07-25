@@ -1,6 +1,6 @@
 # Two Factor Authentication
 
-This is a custom module that adds basic two-factor authentication to Telerik Sitefinity. It's not entirely integrated since, well, I didn't feel like it. :P
+This is a custom module that adds basic two-factor authentication to Telerik Sitefinity. It's not entirely integrated since, well, it was just an experiment.
 
 ## Authy
 
