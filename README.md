@@ -2,6 +2,8 @@
 
 This is a custom module that adds basic two-factor authentication to Telerik Sitefinity. It's not entirely integrated since, well, it was just an experiment.
 
+Watch [a demo](http://youtu.be/_CkmrdKSglY) of it in action (1:57)
+
 ## Authy
 
 It relies on [Authy](https://www.authy.com/) to provide and validate the tokens. You must create an account and set up an Authy app to use this as is.
